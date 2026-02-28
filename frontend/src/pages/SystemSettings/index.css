@@ -1,0 +1,191 @@
+.system-settings-container {
+  padding: 0;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.settings-header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.settings-card {
+  margin-bottom: 24px;
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s;
+}
+
+.settings-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.settings-card .ant-card-head {
+  background: linear-gradient(135deg, rgba(0, 80, 179, 0.05) 0%, rgba(19, 194, 194, 0.05) 100%);
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.settings-card .ant-card-head-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.config-section {
+  margin-bottom: 24px;
+}
+
+.config-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--bg-hover);
+  border-radius: 6px;
+}
+
+.config-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.config-list {
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.config-list .ant-list-item {
+  padding: 16px;
+  transition: background 0.3s;
+}
+
+.config-list .ant-list-item:hover {
+  background: var(--bg-hover);
+}
+
+.provider-tabs .ant-tabs-nav {
+  margin-bottom: 24px;
+}
+
+.provider-tabs .ant-tabs-tab {
+  font-size: 16px;
+  font-weight: 500;
+  padding: 12px 24px;
+}
+
+.form-section {
+  background: var(--bg-container);
+  padding: 24px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-color);
+}
+
+.info-alert {
+  margin-bottom: 20px;
+  border-radius: 6px;
+}
+
+.template-list .ant-list-item {
+  padding: 20px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  background: var(--bg-container);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s;
+}
+
+.template-list .ant-list-item:hover {
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.api-key-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.api-key-tag {
+  min-width: 100px;
+}
+
+.model-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.model-tag {
+  min-width: 120px;
+}
+
+.model-value {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: 'Courier New', monospace;
+}
+
+/* 深色模式适配 */
+[data-theme='dark'] .settings-card .ant-card-head {
+  background: linear-gradient(135deg, rgba(23, 125, 220, 0.1) 0%, rgba(73, 170, 25, 0.1) 100%);
+}
+
+[data-theme='dark'] .config-section-header {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .form-section {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .system-settings-container {
+    padding: 16px;
+  }
+
+  .settings-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .settings-header h1 {
+    font-size: 24px;
+  }
+
+  .provider-tabs .ant-tabs-tab {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
+}

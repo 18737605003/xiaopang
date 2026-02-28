@@ -1,0 +1,125 @@
+.document-generation {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #1890ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.markdown-preview {
+  padding: 24px;
+  background: #fafafa;
+  border-radius: 8px;
+  min-height: 400px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.markdown-preview h1 {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e8e8e8;
+}
+
+.markdown-preview h2 {
+  font-size: 24px;
+  font-weight: bold;
+  margin-top: 24px;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.markdown-preview h3 {
+  font-size: 20px;
+  font-weight: bold;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  color: #555;
+}
+
+.markdown-preview p {
+  margin-bottom: 12px;
+  line-height: 1.8;
+  color: #333;
+}
+
+.markdown-preview ul,
+.markdown-preview ol {
+  margin-bottom: 12px;
+  padding-left: 24px;
+}
+
+.markdown-preview li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.markdown-preview code {
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+}
+
+.markdown-preview pre {
+  background: #f5f5f5;
+  padding: 16px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin-bottom: 16px;
+}
+
+.markdown-preview pre code {
+  background: none;
+  padding: 0;
+}
+
+.markdown-preview blockquote {
+  border-left: 4px solid #1890ff;
+  padding-left: 16px;
+  margin: 16px 0;
+  color: #666;
+  font-style: italic;
+}
+
+.markdown-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+}
+
+.markdown-preview table th,
+.markdown-preview table td {
+  border: 1px solid #e8e8e8;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.markdown-preview table th {
+  background: #fafafa;
+  font-weight: bold;
+}
+
+.markdown-preview a {
+  color: #1890ff;
+  text-decoration: none;
+}
+
+.markdown-preview a:hover {
+  text-decoration: underline;
+}

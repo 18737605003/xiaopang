@@ -1,0 +1,206 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  role      String   @default("USER")
+  department String?
+  status    String   @default("ACTIVE")
+  quota     Int      @default(1000)
+  usedQuota Int      @default(0)
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  conversations  Conversation[]
+  documents      Document[]
+  operationLogs  OperationLog[]
+  securityLogs   SecurityLog[]
+  aiUsageLogs    AIUsageLog[]
+  auditTasks     AuditTask[]
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String?
+  model     String   @default("gpt-3.5-turbo")
+  messages  String   // SQLite 使用 String 存储 JSON
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id          String   @id @default(uuid())
+  userId      String
+  title       String
+  content     String
+  category    String?
+  size        Int
+  fileType    String
+  filePath    String?
+  vectorized  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chunks DocumentChunk[]
+}
+
+model DocumentChunk {
+  id          String   @id @default(uuid())
+  documentId  String
+  content     String
+  embedding   String   // JSON string of vector array
+  chunkIndex  Int
+  createdAt   DateTime @default(now())
+  
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  
+  @@index([documentId])
+}
+
+model OperationLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  username   String?
+  action     String   // LOGIN, LOGOUT, CREATE, UPDATE, DELETE, VIEW, EXPORT
+  resource   String   // users, documents, settings, ai-chat, knowledge-base
+  resourceId String?
+  method     String   // GET, POST, PUT, DELETE
+  status     String   // SUCCESS, FAILURE
+  ip         String?
+  userAgent  String?
+  duration   Int?
+  details    String?  // JSON string for operation details
+  createdAt  DateTime @default(now())
+  
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
+}
+
+model SystemLog {
+  id        String   @id @default(uuid())
+  level     String   // INFO, WARN, ERROR
+  module    String   // auth, ai, database, upload, system
+  message   String
+  stack     String?  // Error stack trace
+  metadata  String?  // JSON string for additional info
+  createdAt DateTime @default(now())
+  
+  @@index([level])
+  @@index([module])
+  @@index([createdAt])
+}
+
+model SecurityLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  eventType String   // LOGIN_FAILED, PERMISSION_DENIED, IP_BLOCKED, TOKEN_EXPIRED, SUSPICIOUS_ACTIVITY
+  ip        String?
+  details   String?  // JSON string
+  severity  String   @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
+  handled   Boolean  @default(false)
+  handledBy String?
+  handledAt DateTime?
+  createdAt DateTime @default(now())
+  
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  @@index([eventType])
+  @@index([severity])
+  @@index([handled])
+  @@index([createdAt])
+}
+
+model AIUsageLog {
+  id           String   @id @default(uuid())
+  userId       String
+  username     String?
+  model        String   // gpt-4, gpt-3.5-turbo, text-embedding-ada-002
+  action       String   // chat, embedding, analysis, generation, rerank
+  inputTokens  Int?
+  outputTokens Int?
+  totalTokens  Int?
+  cost         Float?
+  duration     Int      // milliseconds
+  status       String   // SUCCESS, FAILURE
+  errorMessage String?
+  createdAt    DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([model])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model SystemConfig {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditTask {
+  id          String   @id @default(uuid())
+  userId      String
+  repoUrl     String
+  repoName    String
+  branch      String   @default("main")
+  status      String   // pending, cloning, analyzing, completed, failed
+  progress    Int      @default(0)
+  message     String?
+  startTime   DateTime @default(now())
+  endTime     DateTime?
+  error       String?
+  
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  report      AuditReport?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+}
+
+model AuditReport {
+  id              String   @id @default(uuid())
+  taskId          String   @unique
+  
+  // 统计信息
+  totalIssues     Int
+  criticalIssues  Int
+  highIssues      Int
+  mediumIssues    Int
+  lowIssues       Int
+  filesScanned    Int
+  linesOfCode     Int
+  
+  // 详细数据（JSON）
+  issues          String   // JSON array
+  metrics         String   // JSON object
+  aiInsights      String?  // AI 分析结果
+  
+  task            AuditTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+}

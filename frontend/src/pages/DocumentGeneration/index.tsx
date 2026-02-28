@@ -5,6 +5,7 @@ import type { UploadProps } from 'antd';
 import ReactMarkdown from 'react-markdown';
 import apiClient from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
+import PageHeader from '../../components/PageHeader';
 import './index.css';
 
 const { TextArea } = Input;
@@ -506,7 +507,10 @@ const DocumentGeneration = () => {
 
   return (
     <div className="document-generation">
-      <h1 style={{ marginBottom: 24 }}>文档生成</h1>
+      <PageHeader
+        title="文档生成"
+        description="上传代码文件，AI 自动生成技术文档"
+      />
 
       <Card title="上传代码文件" style={{ marginBottom: 16 }}>
         <Dragger {...uploadProps}>

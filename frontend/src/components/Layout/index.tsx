@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Layout as AntLayout, Menu, Avatar, Dropdown, theme, Switch, Breadcrumb, Space, Badge, Tooltip } from 'antd';
+import { Layout as AntLayout, Menu, Avatar, Dropdown, theme, Switch, Breadcrumb, Space, Badge, Tooltip, message } from 'antd';
+import type { MenuProps } from 'antd';
 import {
   DashboardOutlined,
   MessageOutlined,
@@ -16,6 +17,7 @@ import {
   BellOutlined,
   SearchOutlined,
   HomeOutlined,
+  AuditOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore } from '../../store/themeStore';
@@ -31,8 +33,6 @@ const Layout = () => {
   const { isDark, toggleTheme } = useThemeStore();
   const { token } = theme.useToken();
 
-  const isAdmin = user?.role === 'ADMIN';
-
   // 更新 HTML 主题属性
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
@@ -41,7 +41,7 @@ const Layout = () => {
   // 路由到面包屑映射
   const breadcrumbNameMap: Record<string, string> = {
     '/': '首页',
-    '/ai-chat': 'AI对话',
+    '/ai-chat': 'AI 对话',
     '/document-generation': '文档生成',
     '/knowledge-base': '知识库',
     '/code-audit': '代码审计',
@@ -71,22 +71,48 @@ const Layout = () => {
     return breadcrumbs;
   };
 
-  // 所有菜单项
-  const allMenuItems = [
-    { key: '/', icon: <DashboardOutlined />, label: '首页', roles: ['ADMIN', 'USER'] },
-    { key: '/ai-chat', icon: <MessageOutlined />, label: 'AI对话', roles: ['ADMIN', 'USER'] },
-    { key: '/document-generation', icon: <FileTextOutlined />, label: '文档生成', roles: ['ADMIN', 'USER'] },
-    { key: '/knowledge-base', icon: <DatabaseOutlined />, label: '知识库', roles: ['ADMIN', 'USER'] },
-    { key: '/code-audit', icon: <FileSearchOutlined />, label: '代码审计', roles: ['ADMIN', 'USER'] },
-    { key: '/users', icon: <UserOutlined />, label: '用户管理', roles: ['ADMIN'] },
-    { key: '/logs', icon: <FileSearchOutlined />, label: '日志管理', roles: ['ADMIN'] },
-    { key: '/settings', icon: <SettingOutlined />, label: '系统设置', roles: ['ADMIN', 'USER'] },
+  // 菜单项 - 分组
+  const coreMenuItems: MenuProps['items'] = [
+    {
+      key: 'core-group',
+      type: 'group',
+      label: collapsed ? null : '核心功能',
+      children: [
+        { key: '/', icon: <DashboardOutlined />, label: '工作台' },
+        { key: '/ai-chat', icon: <MessageOutlined />, label: 'AI 对话' },
+        { key: '/document-generation', icon: <FileTextOutlined />, label: '文档生成' },
+        { key: '/knowledge-base', icon: <DatabaseOutlined />, label: '知识库' },
+        { key: '/code-audit', icon: <AuditOutlined />, label: '代码审计' },
+      ],
+    },
   ];
 
-  // 根据用户角色过滤菜单
-  const menuItems = allMenuItems.filter(item => 
-    item.roles.includes(user?.role || '')
-  );
+  const adminMenuItems: MenuProps['items'] = user?.role === 'ADMIN' ? [
+    {
+      key: 'admin-group',
+      type: 'group',
+      label: collapsed ? null : '系统管理',
+      children: [
+        { key: '/users', icon: <UserOutlined />, label: '用户管理' },
+        { key: '/logs', icon: <FileSearchOutlined />, label: '日志管理' },
+        { key: '/settings', icon: <SettingOutlined />, label: '系统设置' },
+      ],
+    },
+  ] : [
+    {
+      key: 'settings-group',
+      type: 'group',
+      label: collapsed ? null : '设置',
+      children: [
+        { key: '/settings', icon: <SettingOutlined />, label: '系统设置' },
+      ],
+    },
+  ];
+
+  const menuItems: MenuProps['items'] = [
+    ...(coreMenuItems || []),
+    ...(adminMenuItems || []),
+  ];
 
   const userMenuItems = [
     {
@@ -115,6 +141,8 @@ const Layout = () => {
         trigger={null} 
         collapsible 
         collapsed={collapsed}
+        width={224}
+        collapsedWidth={64}
         style={{
           overflow: 'auto',
           height: '100vh',
@@ -123,16 +151,17 @@ const Layout = () => {
           top: 0,
           bottom: 0,
           zIndex: 1000,
+          borderRight: '1px solid rgba(255,255,255,0.06)',
         }}
       >
-        <div className="logo">
+        <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
           {collapsed ? (
-            <span style={{ fontSize: '24px', fontWeight: 'bold' }}>AI</span>
+            <span className="logo-text-collapsed">AI</span>
           ) : (
-            <>
-              <span style={{ fontSize: '24px', marginRight: '8px' }}>🤖</span>
-              <span style={{ fontSize: '18px', fontWeight: 600 }}>AI 企业平台</span>
-            </>
+            <div className="logo-inner">
+              <div className="logo-icon">AI</div>
+              <span className="logo-text">AI Enterprise</span>
+            </div>
           )}
         </div>
         <Menu
@@ -141,9 +170,10 @@ const Layout = () => {
           selectedKeys={[location.pathname]}
           items={menuItems}
           onClick={({ key }) => navigate(key)}
+          style={{ borderRight: 0 }}
         />
       </Sider>
-      <AntLayout style={{ marginLeft: collapsed ? 80 : 240, transition: 'margin-left 0.2s', minHeight: '100vh' }}>
+      <AntLayout style={{ marginLeft: collapsed ? 64 : 224, transition: 'margin-left 0.2s ease', minHeight: '100vh' }}>
         <Header 
           style={{ 
             padding: 0, 
@@ -151,11 +181,13 @@ const Layout = () => {
             position: 'sticky',
             top: 0,
             zIndex: 999,
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+            borderBottom: `1px solid ${token.colorBorderSecondary}`,
+            height: 56,
+            lineHeight: '56px',
           }}
         >
           <div className="header-content">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div
                 className="trigger"
                 onClick={() => setCollapsed(!collapsed)}
@@ -172,35 +204,31 @@ const Layout = () => {
               />
             </div>
 
-            <Space size={20} align="center">
+            <Space size={4} align="center">
               {/* 全局搜索 */}
-              <Tooltip title="全局搜索 (Ctrl+K)">
-                <SearchOutlined 
-                  style={{ fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                  onClick={() => console.log('打开搜索')}
-                />
+              <Tooltip title="全局搜索">
+                <div className="header-icon-btn" onClick={() => message.info('搜索功能开发中')}>
+                  <SearchOutlined />
+                </div>
               </Tooltip>
 
               {/* 通知 */}
               <Tooltip title="通知">
-                <Badge count={5} size="small">
-                  <BellOutlined 
-                    style={{ fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                    onClick={() => console.log('打开通知')}
-                  />
-                </Badge>
+                <div className="header-icon-btn" onClick={() => message.info('通知功能开发中')}>
+                  <Badge count={0} size="small">
+                    <BellOutlined style={{ fontSize: '16px' }} />
+                  </Badge>
+                </div>
               </Tooltip>
 
               {/* 主题切换 */}
               <Tooltip title={isDark ? '切换到浅色模式' : '切换到深色模式'}>
-                <Switch
-                  checked={isDark}
-                  onChange={toggleTheme}
-                  checkedChildren={<BulbOutlined />}
-                  unCheckedChildren={<BulbOutlined />}
-                  style={{ display: 'flex', alignItems: 'center' }}
-                />
+                <div className="header-icon-btn" onClick={toggleTheme}>
+                  <BulbOutlined />
+                </div>
               </Tooltip>
+
+              <div className="header-divider" />
 
               {/* 用户信息 */}
               <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
@@ -208,8 +236,11 @@ const Layout = () => {
                   <Avatar 
                     src={user?.avatar} 
                     icon={<UserOutlined />}
-                    size="small"
-                    style={{ cursor: 'pointer' }}
+                    size={28}
+                    style={{ 
+                      cursor: 'pointer',
+                      backgroundColor: token.colorPrimary,
+                    }}
                   />
                   <div className="user-text">
                     <span className="username">{user?.username}</span>
@@ -223,9 +254,10 @@ const Layout = () => {
           </div>
         </Header>
         <Content 
-          className="site-layout-content"
+          className="site-layout-content page-enter-animation"
+          key={location.pathname}
           style={{
-            padding: '24px',
+            padding: 'var(--page-padding)',
             background: 'var(--bg-layout)',
           }}
         >

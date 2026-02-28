@@ -1,21 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Row, Col, Card, Statistic, Progress, Tag, Space, Typography, Segmented, Spin, Empty } from 'antd';
+import { Row, Col, Card, Statistic, Tag, Space, Typography, Segmented, Skeleton, Empty } from 'antd';
 import {
   UserOutlined,
   MessageOutlined,
   FileTextOutlined,
   ClockCircleOutlined,
-  ArrowUpOutlined,
-  ArrowDownOutlined,
   DatabaseOutlined,
   ApiOutlined,
-  CheckCircleOutlined,
+  AuditOutlined,
+  RightOutlined,
 } from '@ant-design/icons';
-import { LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useAuthStore } from '../../store/authStore';
+import PageHeader from '../../components/PageHeader';
 import './index.css';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface DashboardStats {
   totalUsers: number;
@@ -34,11 +35,19 @@ interface DashboardStats {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [timeRange, setTimeRange] = useState<string>('week');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats | null>(null);
 
-  // 获取Dashboard统计数据
+  // 时间问候语
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return '上午好';
+    if (hour < 18) return '下午好';
+    return '晚上好';
+  };
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -54,262 +63,183 @@ const Dashboard = () => {
         setLoading(false);
       }
     };
-
     fetchStats();
   }, []);
 
-  // 统计卡片数据（基于真实数据，添加点击跳转）
-  const statCards = [
-    {
-      title: '总用户数',
-      value: stats?.totalUsers || 0,
-      prefix: <UserOutlined />,
-      suffix: '人',
-      trend: 0,
-      color: '#0050b3',
-      bgColor: 'rgba(0, 80, 179, 0.1)',
-      show: stats && stats.totalUsers > 0,
-      path: '/users',
-    },
-    {
-      title: '文档总数',
-      value: stats?.totalDocuments || 0,
-      prefix: <DatabaseOutlined />,
-      suffix: '个',
-      trend: 0,
-      color: '#fa8c16',
-      bgColor: 'rgba(250, 140, 22, 0.1)',
-      show: stats && stats.totalDocuments > 0,
-      path: '/knowledge-base',
-    },
-    {
-      title: '今日调用',
-      value: stats?.todayApiCalls || 0,
-      prefix: <ApiOutlined />,
-      suffix: '次',
-      trend: 0,
-      color: '#13c2c2',
-      bgColor: 'rgba(19, 194, 194, 0.1)',
-      show: stats && stats.todayApiCalls > 0,
-      path: '/logs',
-    },
-    {
-      title: '平均响应',
-      value: stats?.avgResponseTime || 0,
-      prefix: <ClockCircleOutlined />,
-      suffix: 's',
-      trend: 0,
-      color: '#52c41a',
-      bgColor: 'rgba(82, 196, 26, 0.1)',
-      show: stats && stats.avgResponseTime > 0,
-      path: null,
-    },
-  ].filter(card => card.show);
+  // 快捷操作
+  const quickActions = [
+    { icon: <MessageOutlined />, label: 'AI 对话', path: '/ai-chat', color: '#1677ff' },
+    { icon: <FileTextOutlined />, label: '文档生成', path: '/document-generation', color: '#52c41a' },
+    { icon: <DatabaseOutlined />, label: '知识库', path: '/knowledge-base', color: '#faad14' },
+    { icon: <AuditOutlined />, label: '代码审计', path: '/code-audit', color: '#ff4d4f' },
+  ];
 
-  // 功能使用分布数据
+  // 统计卡片
+  const statCards = [
+    { title: '总用户数', value: stats?.totalUsers || 0, suffix: '人', icon: <UserOutlined />, color: '#1677ff' },
+    { title: '文档总数', value: stats?.totalDocuments || 0, suffix: '个', icon: <DatabaseOutlined />, color: '#52c41a' },
+    { title: '今日调用', value: stats?.todayApiCalls || 0, suffix: '次', icon: <ApiOutlined />, color: '#faad14' },
+    { title: '平均响应', value: stats?.avgResponseTime || 0, suffix: 's', icon: <ClockCircleOutlined />, color: '#ff4d4f' },
+  ];
+
+  // 功能使用分布
   const featureData = [
-    { name: 'AI对话', count: stats?.featureUsage?.aiChat || 0, color: '#0050b3' },
-    { name: '文档分析', count: stats?.featureUsage?.documentGen || 0, color: '#13c2c2' },
-    { name: '知识库', count: stats?.featureUsage?.knowledgeBase || 0, color: '#fa8c16' },
-    { name: '代码审计', count: stats?.featureUsage?.codeAudit || 0, color: '#52c41a' },
+    { name: 'AI 对话', count: stats?.featureUsage?.aiChat || 0, color: '#1677ff' },
+    { name: '文档分析', count: stats?.featureUsage?.documentGen || 0, color: '#52c41a' },
+    { name: '知识库', count: stats?.featureUsage?.knowledgeBase || 0, color: '#faad14' },
+    { name: '代码审计', count: stats?.featureUsage?.codeAudit || 0, color: '#ff4d4f' },
   ].filter(item => item.count > 0);
 
-  const COLORS = ['#0050b3', '#13c2c2', '#fa8c16', '#52c41a'];
-
-  // API调用趋势数据
   const usageData = stats?.apiTrend?.length ? stats.apiTrend : [];
-
-  // 是否有统计数据
-  const hasAnyStats = statCards.length > 0 || featureData.length > 0 || usageData.length > 0;
-
-  if (loading) {
-    return (
-      <div className="dashboard-container">
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-          <Spin size="large" tip="加载统计数据中..." />
-        </div>
-      </div>
-    );
-  }
+  const hasChartData = featureData.length > 0 || usageData.length > 0;
 
   return (
     <div className="dashboard-container">
-      <div className="page-header">
-        <div>
-          <Title level={2} style={{ margin: 0 }}>数据概览</Title>
-          <Text type="secondary">实时监控系统运行状态和关键指标</Text>
-        </div>
-        {hasAnyStats && (
-          <Segmented
-            value={timeRange}
-            onChange={setTimeRange}
-            options={[
-              { label: '今日', value: 'today' },
-              { label: '本周', value: 'week' },
-              { label: '本月', value: 'month' },
-            ]}
-          />
-        )}
-      </div>
+      <PageHeader
+        title={`${getGreeting()}，${user?.username || '用户'}`}
+        description="欢迎使用 AI 企业工作平台，以下是系统运行概览"
+        extra={
+          hasChartData ? (
+            <Segmented
+              value={timeRange}
+              onChange={setTimeRange}
+              options={[
+                { label: '今日', value: 'today' },
+                { label: '本周', value: 'week' },
+                { label: '本月', value: 'month' },
+              ]}
+            />
+          ) : null
+        }
+      />
 
-      {!hasAnyStats ? (
-        <Card style={{ marginTop: 24 }}>
+      {/* 快捷操作 */}
+      <Row gutter={[12, 12]} style={{ marginBottom: 20 }}>
+        {quickActions.map((action) => (
+          <Col xs={12} sm={6} key={action.path}>
+            <div
+              className="quick-action-item"
+              onClick={() => navigate(action.path)}
+            >
+              <div className="quick-action-icon" style={{ background: `${action.color}10`, color: action.color }}>
+                {action.icon}
+              </div>
+              <span className="quick-action-label">{action.label}</span>
+              <RightOutlined className="quick-action-arrow" />
+            </div>
+          </Col>
+        ))}
+      </Row>
+
+      {/* 统计卡片 */}
+      <Row gutter={[12, 12]} style={{ marginBottom: 20 }}>
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <Col xs={12} sm={6} key={i}>
+                <Card className="stat-card" bodyStyle={{ padding: 16 }}>
+                  <Skeleton active paragraph={{ rows: 1 }} title={{ width: 80 }} />
+                </Card>
+              </Col>
+            ))
+          : statCards.map((stat, index) => (
+              <Col xs={12} sm={6} key={index}>
+                <Card className="stat-card" bodyStyle={{ padding: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <Text style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{stat.title}</Text>
+                      <Statistic
+                        value={stat.value}
+                        suffix={<span style={{ fontSize: 14, fontWeight: 400, color: 'var(--text-secondary)' }}>{stat.suffix}</span>}
+                        valueStyle={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)', lineHeight: '36px' }}
+                      />
+                    </div>
+                    <div className="stat-icon-wrapper" style={{ background: `${stat.color}10`, color: stat.color }}>
+                      {stat.icon}
+                    </div>
+                  </div>
+                </Card>
+              </Col>
+            ))}
+      </Row>
+
+      {/* 图表区域 */}
+      {loading ? (
+        <Row gutter={[12, 12]}>
+          <Col xs={24} lg={16}><Card><Skeleton active paragraph={{ rows: 8 }} /></Card></Col>
+          <Col xs={24} lg={8}><Card><Skeleton active paragraph={{ rows: 8 }} /></Card></Col>
+        </Row>
+      ) : !hasChartData ? (
+        <Card>
           <Empty
             description="暂无统计数据"
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           >
             <Text type="secondary">
-              系统刚初始化，还没有产生任何数据。开始使用平台功能后，统计数据将自动显示在这里。
+              开始使用平台功能后，统计数据将自动显示在这里
             </Text>
           </Empty>
         </Card>
       ) : (
-        <>
-          {/* 统计卡片 - 支持点击跳转 */}
-          {statCards.length > 0 && (
-            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-              {statCards.map((stat, index) => (
-                <Col xs={24} sm={12} lg={6} key={index}>
-                  <Card 
-                    className={`stat-card hover-card ${stat.path ? 'clickable-card' : ''}`}
-                    style={{ 
-                      borderLeft: `4px solid ${stat.color}`,
-                      background: stat.bgColor,
-                      cursor: stat.path ? 'pointer' : 'default',
-                    }}
-                    onClick={() => stat.path && navigate(stat.path)}
-                    hoverable={!!stat.path}
-                  >
-                    <Space direction="vertical" size={8} style={{ width: '100%' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Text type="secondary" style={{ fontSize: 14 }}>{stat.title}</Text>
-                        <div style={{ 
-                          fontSize: 24, 
-                          color: stat.color,
-                          background: 'rgba(255, 255, 255, 0.8)',
-                          padding: '8px',
-                          borderRadius: '8px',
-                        }}>
-                          {stat.prefix}
-                        </div>
-                      </div>
-                      <div>
-                        <Statistic
-                          value={stat.value}
-                          suffix={stat.suffix}
-                          valueStyle={{ 
-                            fontSize: 32,
-                            fontWeight: 600,
-                            color: stat.color,
-                          }}
-                        />
-                      </div>
-                      {stat.path && (
-                        <Text type="secondary" style={{ fontSize: 12, color: stat.color }}>
-                          点击查看详情 →
-                        </Text>
-                      )}
-                    </Space>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
+        <Row gutter={[12, 12]}>
+          {usageData.length > 0 && (
+            <Col xs={24} lg={16}>
+              <Card
+                title="API 调用趋势"
+                extra={<Space><Tag color="success">成功</Tag><Tag color="error">失败</Tag></Space>}
+                className="chart-card"
+              >
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={usageData}>
+                    <defs>
+                      <linearGradient id="colorSuccess" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#52c41a" stopOpacity={0.15}/>
+                        <stop offset="95%" stopColor="#52c41a" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorFailed" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ff4d4f" stopOpacity={0.15}/>
+                        <stop offset="95%" stopColor="#ff4d4f" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color-light)" />
+                    <XAxis dataKey="date" stroke="var(--text-secondary)" fontSize={12} />
+                    <YAxis stroke="var(--text-secondary)" fontSize={12} />
+                    <Tooltip />
+                    <Legend />
+                    <Area type="monotone" dataKey="success" stroke="#52c41a" fillOpacity={1} fill="url(#colorSuccess)" name="成功" strokeWidth={2} />
+                    <Area type="monotone" dataKey="failed" stroke="#ff4d4f" fillOpacity={1} fill="url(#colorFailed)" name="失败" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </Card>
+            </Col>
           )}
-
-          <Row gutter={[16, 16]}>
-            {/* API调用趋势 */}
-            {usageData.length > 0 && (
-              <Col xs={24} lg={16}>
-                <Card 
-                  title={
-                    <Space>
-                      <ApiOutlined />
-                      <span>API 调用趋势</span>
-                    </Space>
-                  }
-                  extra={
-                    <Space>
-                      <Tag color="success">成功</Tag>
-                      <Tag color="error">失败</Tag>
-                    </Space>
-                  }
-                  className="chart-card"
-                >
-                  <ResponsiveContainer width="100%" height={320}>
-                    <AreaChart data={usageData}>
-                      <defs>
-                        <linearGradient id="colorSuccess" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#52c41a" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#52c41a" stopOpacity={0}/>
-                        </linearGradient>
-                        <linearGradient id="colorFailed" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#f5222d" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#f5222d" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="date" stroke="#8c8c8c" />
-                      <YAxis stroke="#8c8c8c" />
-                      <Tooltip />
-                      <Legend />
-                      <Area 
-                        type="monotone" 
-                        dataKey="success" 
-                        stroke="#52c41a" 
-                        fillOpacity={1}
-                        fill="url(#colorSuccess)"
-                        name="成功"
-                      />
-                      <Area 
-                        type="monotone" 
-                        dataKey="failed" 
-                        stroke="#f5222d" 
-                        fillOpacity={1}
-                        fill="url(#colorFailed)"
-                        name="失败"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </Card>
-              </Col>
-            )}
-
-            {/* 功能使用分布 */}
-            {featureData.length > 0 && (
-              <Col xs={24} lg={usageData.length > 0 ? 8 : 16}>
-                <Card 
-                  title={
-                    <Space>
-                      <DatabaseOutlined />
-                      <span>功能使用分布</span>
-                    </Space>
-                  }
-                  className="chart-card"
-                >
-                  <ResponsiveContainer width="100%" height={320}>
-                    <PieChart>
-                      <Pie
-                        data={featureData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={100}
-                        fill="#8884d8"
-                        dataKey="count"
-                      >
-                        {featureData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </Card>
-              </Col>
-            )}
-          </Row>
-        </>
+          {featureData.length > 0 && (
+            <Col xs={24} lg={usageData.length > 0 ? 8 : 16}>
+              <Card title="功能使用分布" className="chart-card">
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={featureData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={90}
+                      innerRadius={50}
+                      fill="#8884d8"
+                      dataKey="count"
+                      strokeWidth={0}
+                    >
+                      {featureData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Card>
+            </Col>
+          )}
+        </Row>
       )}
     </div>
   );

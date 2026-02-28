@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Card, Upload, Button, List, Typography } from 'antd';
-import { UploadOutlined, FileTextOutlined } from '@ant-design/icons';
+import { Card, Upload, Button, Typography, Empty } from 'antd';
+import { UploadOutlined, FileTextOutlined, InboxOutlined } from '@ant-design/icons';
 import { aiApi } from '../../api/ai';
+import PageHeader from '../../components/PageHeader';
 
 const { Paragraph } = Typography;
 
@@ -23,24 +24,37 @@ const DocumentAnalysis = () => {
   };
 
   return (
-    <div>
-      <h1 style={{ marginBottom: 24 }}>文档分析</h1>
+    <div style={{ maxWidth: 900, margin: '0 auto' }}>
+      <PageHeader
+        title="文档分析"
+        description="上传文档，AI 自动分析内容并提取关键信息"
+      />
       
       <Card style={{ marginBottom: 16 }}>
-        <Upload
+        <Upload.Dragger
           beforeUpload={handleUpload}
           maxCount={1}
           accept=".pdf,.doc,.docx,.txt"
+          showUploadList={false}
         >
-          <Button icon={<UploadOutlined />} loading={analyzing}>
-            上传文档
-          </Button>
-        </Upload>
+          <p className="ant-upload-drag-icon">
+            <InboxOutlined />
+          </p>
+          <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
+          <p className="ant-upload-hint">支持 PDF、Word、TXT 格式</p>
+        </Upload.Dragger>
       </Card>
 
-      {result && (
+      {result ? (
         <Card title="分析结果" extra={<FileTextOutlined />}>
-          <Paragraph>{result}</Paragraph>
+          <Paragraph style={{ whiteSpace: 'pre-wrap' }}>{result}</Paragraph>
+        </Card>
+      ) : !analyzing && (
+        <Card>
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description="上传文档后，分析结果将显示在这里"
+          />
         </Card>
       )}
     </div>
